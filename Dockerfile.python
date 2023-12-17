@@ -1,20 +1,12 @@
 # Dockerfile.python
 
-FROM python:3.11 as python-builder
+FROM python:3.11-alpine as python-builder
 
 # Set the working directory inside the container
-WORKDIR /app
+WORKDIR /app/ui
 
-# Install git to clone the repository
-RUN apt install git
-
-# Clone the repository into the container
-ARG REPO_URL=https://github.com/ouoertheo/HAC_Assignments.git
-RUN git clone $REPO_URL HAC_Assignments
-
-# Set the working directory to the cloned repository
-WORKDIR /app/HAC_Assignments/ui-python
-COPY ./ui-python/students.json ./students.json
+# Copy the Python application source code into the container
+COPY ./ui-python /app/ui
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
