@@ -13,4 +13,4 @@ COPY .env /app/api/.env
 EXPOSE 3000
 
 # Define the command to run when the container starts
-CMD ["/app/api/HACApi"]
+CMD ["sudo /app/api/HACApi"]
