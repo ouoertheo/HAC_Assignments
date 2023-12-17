@@ -11,4 +11,3 @@ COPY ./ui-python /app/HAC_Assignments
 # Install Python dependencies
 RUN pip install -r requirements.txt
 WORKDIR /app/HAC_Assignments
-RUN ls
