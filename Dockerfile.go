@@ -6,11 +6,13 @@ FROM golang:1.19-alpine
 WORKDIR /app/api
 
 # Copy the built Go binary from the first stage
-COPY .env /app/api/.env
-RUN go install github.com/Threqt1/HACApi@latest
+RUN apk add git
+RUN git clone https://github.com/Threqt1/HACApi.git HACApi
+COPY .env ./HACApi/.env
+
 
 # Expose any necessary ports
 EXPOSE 3000
 
-# Define the command to run when the container starts
-CMD ["sudo HACApi"]
+WORKDIR /app/api/HACApi
+RUN go mod download

@@ -7,11 +7,12 @@ services:
       dockerfile: Dockerfile.go
     ports:
       - "3000:3000"
+    command: go run main.go
 
   python-app:
     build:
       context: .
       dockerfile: Dockerfile.python
-    command: python /app/HAC_Assignments/ui-python/hac_report.py
+    command: python hac_report.py
     ports:
       - "3001:3001"

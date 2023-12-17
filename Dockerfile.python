@@ -3,10 +3,12 @@
 FROM python:3.11-alpine as python-builder
 
 # Set the working directory inside the container
-WORKDIR /app/ui
+WORKDIR /app/HAC_Assignments
 
 # Copy the Python application source code into the container
-COPY ./ui-python /app/ui
+COPY ./ui-python /app/HAC_Assignments
 
 # Install Python dependencies
 RUN pip install -r requirements.txt
+WORKDIR /app/HAC_Assignments
+RUN ls
