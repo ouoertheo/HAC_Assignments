@@ -49,10 +49,15 @@
 <body>
     <label for="studentSelect">Select Student:</label>
     <select id="studentSelect">
-        {% for student in student_list.keys() %}
-        <option value="{{ student }}">{{ student }}</option>
+        {% for student, _ in student_list.items() %}
+            {% if loop.first %}  {# Check if it's the first iteration #}
+                <option value="{{ student }}" selected>{{ student }}</option>
+            {% else %}
+                <option value="{{ student }}">{{ student }}</option>
+            {% endif %}
         {% endfor %}
     </select>
+    
 
     <table id="example" class="display" style="width:100%">
         <thead>

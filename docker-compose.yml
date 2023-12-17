@@ -5,8 +5,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.go
-      args:
-        - GO_VERSION=1.19
     ports:
       - "3000:3000"
 
@@ -14,8 +12,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.python
-      args:
-        - PYTHON_VERSION=3.11
-    command: python /app/ui/hac_report.py
+    command: python /app/HAC_Assignments/ui-python/hac_report.py
     ports:
       - "3001:3001"
