@@ -1,0 +1,12 @@
+# Dockerfile.python
+
+FROM python:3.11 as python-builder
+
+# Set the working directory inside the container
+WORKDIR /app/ui
+
+# Copy the Python application source code into the container
+COPY ./ui-python /app/ui
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt

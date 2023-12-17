@@ -1,0 +1,77 @@
+<!-- templates/table.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Example</title>
+
+    <!-- Add DataTables CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
+
+    <!-- Add jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Add DataTables JavaScript -->
+    <script type="text/javascript" charset="utf8"
+        src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // Initialize DataTable
+            var dataTable = $('#example').DataTable();
+
+            // Add event listener to the dropdown
+            $('#studentSelect').on('change', function () {
+                // Get the selected dataset
+                var selectedstudent = $(this).val();
+
+                // Call the API to get the new dataset
+                $.get(`/api/get_student/${selectedstudent}`, function (data) {
+                    // Clear existing table data
+                    dataTable.clear();
+
+                    // Add the new dataset to the table
+                    data.forEach(function (row) {
+                        dataTable.row.add(row);
+                    });
+
+                    // Redraw the table
+                    dataTable.draw();
+                });
+            });
+        });
+    </script>
+</head>
+
+<body>
+    <label for="studentSelect">Select Student:</label>
+    <select id="studentSelect">
+        {% for student in student_list.keys() %}
+        <option value="{{ student }}">{{ student }}</option>
+        {% endfor %}
+    </select>
+
+    <table id="example" class="display" style="width:100%">
+        <thead>
+            <tr>
+                {% for header in headers %}
+                <th>{{ header }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                {% for cell in row %}
+                <td>{{ cell }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+
+</html>
