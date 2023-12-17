@@ -57,7 +57,7 @@
             {% endif %}
         {% endfor %}
     </select>
-    
+    <button name="Clear Cache" onclick="fetch('/api/clear_cache', {method:'POST'})">Clear Cache</button>
 
     <table id="example" class="display" style="width:100%">
         <thead>

@@ -55,20 +55,21 @@ class CacheEntry:
         self.data = data
         self.ttl = time.time() + ttl_ms
 
-    def is_valid(self) -> Any:
-        if time.time() > self.ttl:
-            return None
+    def expired(self, invalidate = False) -> Any:
+        if time.time() > self.ttl or invalidate:
+            return True
         else:
-            return self.data
+            return False
         
 cache: dict[str, CacheEntry] = {}
 
 def post_cached(*args, **kwargs):
     key = md5(f"{args}{kwargs}".encode('utf-8')).hexdigest()
-    if key in cache and cache[key].is_valid():
+    if key in cache and not cache[key].expired():
         logger.info(f"Retrieved cache entry {key}")
         return cache[key].data
     else:
+        # Don't want invalidate_cache args getting in
         logger.info(f"Key {key} not cached. Making fresh call")
         data = requests.post(*args, **kwargs).json()
         cache[key] = CacheEntry(key,data, CACHE_TTL)
@@ -77,7 +78,7 @@ def post_cached(*args, **kwargs):
 
 def get_classwork(student: str, marking_periods: dict):
     payload = get_student_base_payload(student) | marking_periods
-    data = post_cached(HAC_API_BASE+"/classwork",json=payload)
+    data = post_cached(HAC_API_BASE+"/classwork", json=payload)
     return data
 
 
@@ -127,4 +128,11 @@ def get_dataset(student: str):
     except Exception as e:
         logger.exception(e)
         return {f"error: {str(e)}"}
+    
+@app.post("/api/clear_cache")
+def clear_cache():
+    global cache
+    cache = {}
+    return
+
 uvicorn.run(app, host="0.0.0.0", port=3001)
