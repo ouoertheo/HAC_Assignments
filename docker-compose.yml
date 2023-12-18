@@ -5,9 +5,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.go
+    command: go run main.go
     ports:
       - "3000:3000"
-    command: go run main.go
 
   python-app:
     build:

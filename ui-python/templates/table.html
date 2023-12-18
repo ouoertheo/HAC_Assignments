@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Table Example</title>
+    <title>Fuck HAC</title>
 
     <!-- Add DataTables CSS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
@@ -21,18 +21,23 @@
     <script>
         $(document).ready(function () {
             // Initialize DataTable
-            var dataTable = $('#example').DataTable();
+            var dataTable = $('#example').DataTable({
+                autoWidth: true
+            });
 
             // Add event listener to the dropdown
-            $('#studentSelect').on('change', function () {
+            $('#studentSelect').on('change', getTableData)
+            $('#periodSelect').on('change', getTableData)
+            function  getTableData () {
                 // Get the selected dataset
-                var selectedstudent = $(this).val();
+                var selectedPeriod = $('#periodSelect').val();
+                var selectedstudent = $('#studentSelect').val();
+
+                // Clear existing table data
+                dataTable.clear();
 
                 // Call the API to get the new dataset
-                $.get(`/api/get_student/${selectedstudent}`, function (data) {
-                    // Clear existing table data
-                    dataTable.clear();
-
+                $.post(`/api/grading_period/${selectedPeriod}/${selectedstudent}`, function (data) {
                     // Add the new dataset to the table
                     data.forEach(function (row) {
                         dataTable.row.add(row);
@@ -41,7 +46,8 @@
                     // Redraw the table
                     dataTable.draw();
                 });
-            });
+            };
+            getTableData()
         });
     </script>
 </head>
@@ -50,15 +56,22 @@
     <label for="studentSelect">Select Student:</label>
     <select id="studentSelect">
         {% for student, _ in student_list.items() %}
-            {% if loop.first %}  {# Check if it's the first iteration #}
-                <option value="{{ student }}" selected>{{ student }}</option>
-            {% else %}
-                <option value="{{ student }}">{{ student }}</option>
-            {% endif %}
+            <option value="{{ student }}">{{ student }}</option>
         {% endfor %}
     </select>
     <button name="Clear Cache" onclick="fetch('/api/clear_cache', {method:'POST'})">Clear Cache</button>
-
+    <label for="periodSelect">Select Grading Period:</label>
+    <select id="periodSelect">
+        {% for i in ["",1,2,3,4] %}
+            {% if grading_period == i %}
+                <option value="{{ i }}" selected>{{ i }}</option>
+            {% else %}
+                <option value="{{ i }}">{{ i }}</option>
+            {% endif %}
+        {% endfor %}
+    </select>
+    <br>
+    <br>
     <table id="example" class="display" style="width:100%">
         <thead>
             <tr>
@@ -67,15 +80,7 @@
                 {% endfor %}
             </tr>
         </thead>
-        <tbody>
-            {% for row in rows %}
-            <tr>
-                {% for cell in row %}
-                <td>{{ cell }}</td>
-                {% endfor %}
-            </tr>
-            {% endfor %}
-        </tbody>
+        <tbody></tbody>
     </table>
 </body>
 

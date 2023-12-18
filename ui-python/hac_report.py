@@ -12,7 +12,10 @@ from pathlib import Path
 app = FastAPI()
 cwd = Path(__file__)
 template_path = cwd.parent.joinpath('templates')
+students_path = cwd.parent.joinpath('students.json')
 templates = Jinja2Templates(directory=template_path)
+grading_period = None
+HEADERS = ["Semester", "Class", "Average", "Assignment", "Assigned","Due","Grade"]
 
 HAC_API_BASE = "http://192.168.50.121:3000/api/v1"
 HAC_URL_BASE =  "https://accesscenter.roundrockisd.org"
@@ -33,14 +36,11 @@ class HACStudent:
         self.password = password
 
 # Populate the HACstudents from the students.json file
-with open("students.json",'r') as fh:
+with students_path.open('r') as fh:
     data = json.load(fh)
     students = {student['name']:HACStudent(**student) for student in data}
     logger.info(f"Loaded students: {students}")
 
-if students:
-    current_student = list(students.values())[0]
-    logger.info(f"Current student: {current_student.name}")
 
 def get_student_base_payload(student: str):
     return  {
@@ -72,6 +72,8 @@ def post_cached(*args, **kwargs):
         # Don't want invalidate_cache args getting in
         logger.info(f"Key {key} not cached. Making fresh call")
         data = requests.post(*args, **kwargs).json()
+        if data['err']:
+            raise Exception(data['msg'])
         cache[key] = CacheEntry(key,data, CACHE_TTL)
         return data
 
@@ -82,57 +84,66 @@ def get_classwork(student: str, marking_periods: dict):
     return data
 
 
-def get_bad_assignments(student: str, marking_periods: dict):
-    classwork = get_classwork(student, marking_periods)
-    if classwork['err']:
-        raise Exception(classwork['msg'])
+def get_bad_assignments(student: str):
+    classwork = get_classwork(student, {"markingPeriods": [1,2,3,4]})
     
-    headers = ["Period", "Class", "Average", "Assignment","Grade"]
     rows = []
 
     # String together data about class, assignments and grade to populate rows
-    for grading_period in classwork["classwork"]:
-        period = f"Grading Period {grading_period['sixWeeks']}"
-        print("Period:", grading_period['sixWeeks'])
-        for class_entry in grading_period["entries"]:
+    for period in classwork["classwork"]:
+        for class_entry in period["entries"]:
             class_name = class_entry['class']['name']
             class_avg = class_entry['average']
             for assignment in class_entry['assignments']:
-                row_common = [period,class_name,class_avg,assignment['name']]
+                row_common = [period['sixWeeks'],class_name,class_avg,assignment['name'], assignment['assignedDate'],assignment['dueDate']]
                 try:
                     grade = float(assignment['grade']) / float(assignment['totalPoints'])
                     grade = int(grade*100)
                     if grade < 50:
                         rows.append(row_common + [grade])
                 except:
-                    if assignment['grade'] == 'M':
+                    if assignment['grade'] and assignment['grade'] != 'P':
                         rows.append(row_common + [assignment['grade']])
                     if not assignment['grade']:
                         rows.append(row_common + ['Not Graded'])
-        return headers, rows
+    return rows
+    
+def most_recent_period(rows: str):
+    most_recent = 0
+    for row in rows:
+        # Ugly, but works.
+        period = row[0]
+        if  period > most_recent:
+            most_recent = period
+    return int(most_recent)
 
 @app.get("/")
 def read_root(request: Request):
-    marking_periods = {"markingPeriods": [1,2]}
-    headers, rows = get_bad_assignments(current_student.name, marking_periods)
-    return templates.TemplateResponse("table.html", {"request": request, "headers": headers, "rows": rows, "student_list": students})
+    return templates.TemplateResponse("table.html", {"request":request, "headers": HEADERS, "student_list": students, "grading_period": grading_period})
 
 @app.get("/api/get_student/{student}")
 def get_dataset(student: str):
     try:
-        marking_periods = {"markingPeriods": [1,2]}
-        current_student = students[student]
-        logger.info(f"Current student changed to: {current_student}")
-        _, rows = get_bad_assignments(current_student.name, marking_periods)
-        return rows
+        global grading_period
+        rows = get_bad_assignments(student)
+        if not grading_period:
+            grading_period = most_recent_period(rows)
+        logger.info(f"Current student changed to: {student}")
+        return [r for r in rows if r[0] == grading_period]
     except Exception as e:
         logger.exception(e)
         return {f"error: {str(e)}"}
+
+@app.post("/api/grading_period/{period}/{student}")
+def set_grading_period(period: str, student: str):
+    global grading_period 
+    grading_period = int(period)
+    logger.info(f"Grading period changed to: {grading_period}")
+    return get_dataset(student)
     
 @app.post("/api/clear_cache")
 def clear_cache():
     global cache
     cache = {}
-    return
 
 uvicorn.run(app, host="0.0.0.0", port=3001)
